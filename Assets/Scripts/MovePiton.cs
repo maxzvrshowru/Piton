@@ -9,16 +9,19 @@ public class MovePiton : MonoBehaviour
     // Перечисляем направления
     enum Direction : byte { Up, Left, Down, Right };
 
-    // Задаем границы поля игры
-    public static int height = 21;
-    public static int width = 21;
-
     // Задаем начальное направление движения
     private Direction pitonMoveDirection = Direction.Down;
 
+    // Задаем границы поля игры
+    public const int height = 21;
+    public const int width = 21;
+    
     // Начальная скорость питона
     public float fallSetupTime = 0.3f;
     private float fallTime;
+
+    // Предыдущее время, на котором змея подвинулась
+    private float previousTime;
 
     // Бок питона и начальное количество блоков
     public byte pitonPartStartCount;
@@ -27,21 +30,19 @@ public class MovePiton : MonoBehaviour
     // Если игра закончилась
     private bool endGame = false;
 
-    // Пердыдущее время, на котором змея подвинулась
-    private float previousTime;
-
     // Объект с текстом – конец игры
     public GameObject endGameMessage;
 
     // Объект яблочко
     public GameObject apple;
 
+    // Положение первого блока
     private Vector3 firstPitonPartPosition;
 
     // Start is called before the first frame update
     void Start()
     {
-        // Скравем сообщение о конце игры
+        // Скрываем сообщение о конце игры
         endGameMessage.SetActive(false);
         // устанавливаем значение следующего движения на начальное
         fallTime = fallSetupTime;
@@ -78,7 +79,7 @@ public class MovePiton : MonoBehaviour
     {
         // Если игра окончена
         if (endGame)
-            // Если нажат пробле - перезапускаем игру
+            // Если нажат пробел - перезапускаем игру
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 // Снимаем флаг окончания игры
@@ -100,9 +101,9 @@ public class MovePiton : MonoBehaviour
                         Destroy(children.gameObject);
                     }
                 }
-                // Повторно запускаем начальную функци, в ней есть почти все для инициализации игры с нуля
+                // Повторно запускаем начальную функцию, в ней есть почти все для инициализации игры с нуля
                 Start();
-                // На этом кадре стоит завержить обработку
+                // На этом кадре стоит завершить обработку
                 // Иначе будут глюки
                 // выходим из функции Update
                 return;
@@ -122,8 +123,8 @@ public class MovePiton : MonoBehaviour
             bool nyam = false; // голова съела яблоко
             bool head = true; // голова
             int isLast = transform.childCount; // хвост
-            Vector3 lastPosition = new Vector3(); // позция предыдущего блока
-            // проходимя по всем блокам змеии, для головы и хвоста есть особые действия
+            Vector3 lastPosition = new Vector3(); // позиция предыдущего блока
+            // проходим по всем блокам змеи, для головы и хвоста есть особые действия
             foreach (Transform children in transform)
             {
                 // сохраняем текущее положение блока
@@ -155,7 +156,7 @@ public class MovePiton : MonoBehaviour
 
                     // если голова вышла за границы стола
                     // или наткнулся на кусок хвоста, конец игры
-                    if (roundedX < 0 || roundedX >= width || roundedY < 0 || roundedY >= height || notValidMove(children))
+                    if (roundedX < 0 || roundedX >= width || roundedY < 0 || roundedY >= height || notValidMove())
                     {
                         // Конец игры
                         endGame = true;
@@ -186,10 +187,10 @@ public class MovePiton : MonoBehaviour
                 {
                     if (nyam) // Яблоко было съедено!
                     {
-                        nyam = false; // Возвращаем флаг о съеденом яблоке в исходное состояние
+                        nyam = false; // Возвращаем флаг о съеденном яблоке в исходное состояние
                         // Генерируем после хвоста еще один блок
                         Instantiate(pitonPart, children.transform.position, Quaternion.identity, transform);
-                        // Выключаем видимость яблока, мы его съекли!
+                        // Выключаем видимость яблока, мы его съели!
                         apple.GetComponent<SpriteRenderer>().enabled = false;
                         // Сокращаем время хода
                         // Уменьшаем время на 10%
@@ -202,20 +203,21 @@ public class MovePiton : MonoBehaviour
     }
 
     // Функция проверки пересечения головы с телом
-    // Получает блок головы, возврящает правду или ложь
-    private bool notValidMove(Transform head)
+    // возвращает правду или ложь
+    private bool notValidMove()
     {
         // Для головы делать проверку с головой не нужно
         bool isHead = true;
+        Transform head = transform; // Тут будет голова
         foreach (Transform children in transform)
         {
             if (isHead) // голову пропускаем
             {
                 isHead = false; // все остальные блоки не голова
-                continue; // заходим на следующую итерацию цикл
+                head = children;
             }
             // Если голова и блок по одним координатам - питон съел себя
-            if (head.position == children.position) return true;
+            else if (head.position == children.position) return true;
         }
         return false; // Питон себя не съел
     }
